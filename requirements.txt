@@ -1,0 +1,33 @@
+# Core ML (latest compatible)
+torch>=2.3.0
+torchvision>=0.18.0
+torchaudio>=2.3.0
+
+# Transformers
+transformers>=4.42.0
+accelerate>=0.30.0
+
+# YOLO
+ultralytics>=8.2.50
+
+# Computer Vision
+opencv-python>=4.10.0
+Pillow>=10.4.0
+
+# Depth
+timm>=1.0.0
+
+# Scientific
+numpy>=1.26.4
+scipy>=1.13.0
+
+# Backend
+fastapi>=0.111.0
+uvicorn>=0.30.0
+
+# Voice
+pyttsx3>=2.90
+
+# Utils
+requests>=2.31.0
+tqdm>=4.66.0
