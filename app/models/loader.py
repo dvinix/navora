@@ -1,9 +1,12 @@
 import logging
 import torch
 from transformers import Blip2Processor, Blip2ForConditionalGeneration
-from ultralytics import YOLO
+from ultralytics import YOLO 
 
-# app/models/loader.py (continued)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+)
 
 def load_models():
 
@@ -15,12 +18,15 @@ def load_models():
 
     try:
         # Load BLIP-2 Model
-        logging.info("Loading BLIP-2 model (Salesforce/blip2-flan-t5-xl)...")
+        logging.info("Loading BLIP-2 model ...")
+
+        blip_dtype = torch.float16 if device.type == "cuda" else torch.float32
+        blip_device_map = device.type  # "cuda" or "cpu"
         models['blip2_processor'] = Blip2Processor.from_pretrained("Salesforce/blip2-flan-t5-xl")
         models['blip2_model'] = Blip2ForConditionalGeneration.from_pretrained(
             "Salesforce/blip2-flan-t5-xl",
-            torch_dtype=torch.float16,
-            device_map=device
+            torch_dtype=blip_dtype,
+            device_map=blip_device_map,
         )
         models['blip2_model'].eval()
         logging.info("BLIP-2 model loaded successfully.")
