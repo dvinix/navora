@@ -1,1 +1,0 @@
-# Navora app package
