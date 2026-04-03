@@ -6,6 +6,7 @@ import logging
 import torch
 from transformers import Blip2Processor, Blip2ForConditionalGeneration
 from ultralytics import YOLO
+from pathlib import Path
 
 log = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
@@ -18,18 +19,27 @@ def load_models() -> dict:
 
     blip_dtype = torch.float16 if device.type == "cuda" else torch.float32
 
-    log.info("Loading BLIP-2 model (Salesforce/blip2-flan-t5-xl)...")
-    blip_processor = Blip2Processor.from_pretrained("Salesforce/blip2-flan-t5-xl")
+    # Use smaller BLIP-2 model for CPU efficiency
+    # blip2-opt-2.7b is 5x faster than blip2-flan-t5-xl on CPU
+    model_name = "Salesforce/blip2-opt-2.7b" if device.type == "cpu" else "Salesforce/blip2-flan-t5-xl"
+    log.info(f"Loading BLIP-2 model ({model_name})...")
+    blip_processor = Blip2Processor.from_pretrained(model_name)
     blip_model = Blip2ForConditionalGeneration.from_pretrained(
-        "Salesforce/blip2-flan-t5-xl",
+        model_name,
         torch_dtype=blip_dtype,
-        device_map=device.type,
+        device_map=device.type if device.type == "cuda" else None,
+        low_cpu_mem_usage=True,
     )
     blip_model.eval()
     log.info("BLIP-2 loaded.")
 
     log.info("Loading YOLOv8n...")
-    yolo_model = YOLO("yolov8n.pt")
+    # Try to find yolov8n.pt in parent directory or download
+    yolo_path = Path(__file__).parent.parent.parent.parent / "yolov8n.pt"
+    if yolo_path.exists():
+        yolo_model = YOLO(str(yolo_path))
+    else:
+        yolo_model = YOLO("yolov8n.pt")  # Will download if not found
     yolo_model.to(device)
     log.info("YOLOv8 loaded.")
 
