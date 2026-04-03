@@ -1,0 +1,24 @@
+# Core ML
+torch>=2.3.0
+torchvision>=0.18.0
+
+# Transformers (BLIP-2)
+transformers>=4.42.0
+accelerate>=0.30.0
+
+# YOLO
+ultralytics>=8.2.50
+
+# Computer Vision
+opencv-python-headless>=4.10.0
+Pillow>=10.4.0
+
+# Depth (MiDaS)
+timm>=1.0.0
+
+# Scientific
+numpy>=1.26.4
+
+# Gradio (managed by HF Spaces, but pin for local testing)
+gradio>=5.10.0
+spaces>=0.30.0

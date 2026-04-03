@@ -1,106 +1,96 @@
-# Navora Realtime Guidance API
+# 🧭 Navora — Real-time Navigation Assistant
 
-Realtime assistive-vision backend for blind navigation.
+AI-powered assistive-vision backend for blind navigation.
 
-The API processes camera frames using:
-- BLIP-2 for scene understanding
-- YOLOv8 for obstacle detection
-- MiDaS for depth context
+Processes camera frames in real-time using:
+- **BLIP-2** — Scene understanding & obstacle-centric captioning
+- **YOLOv8** — Object detection with confidence scores
+- **MiDaS** — Monocular depth estimation
 
-Output is text guidance for client-side TTS. The server does not store audio files.
+Returns lightweight guidance text for client-side TTS. No audio files stored server-side.
 
-## Why This Architecture
+## Architecture
 
-For production realtime guidance:
-- Client app streams frames over WebSocket.
-- Server returns lightweight guidance text.
-- Mobile app speaks guidance locally using device TTS.
+```
+Phone Camera → WebSocket frames → Server ML Pipeline → Guidance JSON → Client TTS
+```
 
-This keeps latency low and avoids server-side audio generation bottlenecks.
+- Client streams JPEG frames over WebSocket
+- Server returns `action` + `guidance_text` + `speak_now` flag
+- Client speaks guidance using device TTS engine
 
 ## Endpoints
 
-### GET /
-Health/status endpoint.
+### `GET /`
+Serves the test client HTML (or returns `{"status": "ok"}` if HTML not found).
 
-### POST /session/start
-Create a short-lived realtime session.
-
-Response example:
+### `POST /session/start`
+Create a short-lived session.
 ```json
-{
-  "session_id": "f6d4c4...",
-  "ttl_seconds": 120
-}
+{ "session_id": "f6d4c4...", "ttl_seconds": 120 }
 ```
 
-### WS /ws/live-guidance
-Main realtime endpoint.
+### `WS /ws/live-guidance`
+Main real-time endpoint.
 
-Client message:
+**Client sends:**
 ```json
-{
-  "session_id": "f6d4c4...",
-  "frame_base64": "data:image/jpeg;base64,/9j/4AAQ..."
-}
+{ "session_id": "f6d4c4...", "frame_base64": "data:image/jpeg;base64,..." }
 ```
 
-Server message:
+**Server responds:**
 ```json
 {
   "session_id": "f6d4c4...",
   "action": "left",
   "speak_now": true,
   "guidance_text": "Obstacle on your right: bicycle. Move slightly left.",
-  "priority_obstacle": {
-    "label": "bicycle",
-    "confidence": 0.71,
-    "direction": "right"
-  },
-  "main_feature": {
-    "label": "bicycle",
-    "confidence_sum": 0.71,
-    "count": 1
-  },
-  "latency": {
-    "caption_seconds": 0.63,
-    "detection_seconds": 0.08,
-    "depth_seconds": 0.12
-  }
+  "priority_obstacle": { "label": "bicycle", "confidence": 0.71, "direction": "right" },
+  "main_feature": { "label": "bicycle", "confidence_sum": 0.71, "count": 1 },
+  "latency": { "caption_seconds": 0.63, "detection_seconds": 0.08, "depth_seconds": 0.12 }
 }
 ```
 
-Meaning:
-- `action`: navigation command (`stop`, `left`, `right`, `forward`)
-- `speak_now`: client should speak only when true to avoid repetition
-- `guidance_text`: text to speak via mobile TTS
+- `action` — navigation command: `forward`, `stop`, `left`, `right`
+- `speak_now` — client should only speak when `true` (dedup/cooldown)
+- `guidance_text` — text to speak via TTS
 
-### POST /process-video/
-Upload-video test endpoint for offline validation.
-Returns frame-wise guidance fields (`action`, `speak_now`, `narration`, detection metadata).
-No audio URLs or stored audio files are returned.
+## Local Setup
 
-## Local Run
-
-1. Create and activate virtual environment.
-2. Install dependencies:
 ```bash
+# Create & activate venv
+python -m venv .venv
+.venv\Scripts\activate   # Windows
+# source .venv/bin/activate  # macOS/Linux
+
+# Install dependencies
 pip install -r requirements.txt
+
+# Run server
+python -m app.main
 ```
-3. Run API:
-```bash
-uvicorn app.main:app --reload
+
+## Cloud Deployment (Free GPU)
+
+See `hf_deploy/` for Hugging Face Spaces deployment with ZeroGPU.
+
+## Project Structure
+
 ```
-
-## Client-Side TTS Recommendation
-
-In production mobile app:
-- speak only when `speak_now` is true
-- throttle repeated phrases on device
-- keep last guidance phrase and skip duplicates
-
-## Notes
-
-- Session memory is in-process and ephemeral.
-- For horizontal scaling, move session state to Redis.
-- No persistent user data storage is required for realtime guidance flow.
+navora/
+├── app/
+│   ├── main.py              # FastAPI server + WebSocket + guidance logic
+│   ├── models/
+│   │   └── loader.py         # Model loading (BLIP-2, YOLOv8, MiDaS)
+│   └── services/
+│       └── pipeline.py       # ML inference pipeline
+├── hf_deploy/                # Hugging Face Spaces deployment files
+│   ├── app.py                # Gradio app (ZeroGPU)
+│   ├── requirements.txt
+│   └── README.md
+├── notebooks/
+│   └── main.ipynb            # Original prototype notebook
+├── test_client.html          # Browser-based test client
+├── requirements.txt
+└── yolov8n.pt
+```

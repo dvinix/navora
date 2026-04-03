@@ -1,0 +1,24 @@
+# Virtual environment
+.venv/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+
+# SSL certificates (auto-generated)
+cert.pem
+key.pem
+
+# Model weights (downloaded at runtime)
+*.pt
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
